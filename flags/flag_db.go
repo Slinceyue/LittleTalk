@@ -8,7 +8,12 @@ import (
 )
 
 func FlagDB() {
-	err := global.DB
+	err := global.DB.AutoMigrate(
+		&models.User{},
+		&models.Message{},
+		&models.Friend{},
+		&models.FriendRequest{},
+	)
 	if err != nil {
 		logrus.Errorf("数据库迁移失败 %s", err)
 	}
