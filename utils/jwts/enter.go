@@ -31,7 +31,7 @@ func GetToken(claims Claims) (string, error) {
 	return token.SignedString([]byte(global.Config.Jwt.Secret))
 }
 
-func PraseToken(TokenString string) (*MyClaims, error) {
+func ParseToken(TokenString string) (*MyClaims, error) {
 	if TokenString == "" {
 		return nil, errors.New("请登录")
 	}
@@ -67,5 +67,5 @@ func ParseTokenByGen(c *gin.Context) (*MyClaims, error) {
 		token = c.Query("token")
 	}
 
-	return PraseToken(token)
+	return ParseToken(token)
 }

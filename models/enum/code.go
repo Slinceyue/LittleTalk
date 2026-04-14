@@ -5,7 +5,8 @@ type ResCode int
 // 用 iota 生成枚举值（分模块规划，避免混乱）
 const (
 	// 成功（0 开头）
-	CodeSuccess ResCode = 0
+	CodeSuccess      ResCode = 0
+	CodeWrongResCode ResCode = 1
 
 	// 通用错误（1 开头）
 	CodeInvalidParam ResCode = 1001 // 参数错误
@@ -26,10 +27,17 @@ const (
 
 	// 消息模块（4 开头）
 	CodeMessageSendFail ResCode = 4001 // 消息发送失败
+
+	// 文件模块 (5 开头 )
+	CodeFileLoadFail   ResCode = 5001 //文件加载失败
+	CodeFileUploadFail ResCode = 5002 //文件上传失败
+	CodeFileTypeWrong  ResCode = 5003 //文件类型错误
+	CodeFileWrong      ResCode = 5004 //文件数据错误
 )
 
 var codeMsgMap = map[ResCode]string{
-	CodeSuccess:            "success",
+	CodeWrongResCode:       "错误",
+	CodeSuccess:            "成功",
 	CodeInvalidParam:       "参数错误",
 	CodeUnauthorized:       "未登录",
 	CodeForbidden:          "无权限",
@@ -42,6 +50,10 @@ var codeMsgMap = map[ResCode]string{
 	CodeFriendRequestExist: "申请已发送",
 	CodeFriendNotExist:     "好友不存在",
 	CodeMessageSendFail:    "消息发送失败",
+	CodeFileLoadFail:       "文件加载失败",
+	CodeFileUploadFail:     "文件上传失败",
+	CodeFileTypeWrong:      "文件类型错误",
+	CodeFileWrong:          "文件数据错误",
 }
 
 // Message 获取状态码对应的提示信息

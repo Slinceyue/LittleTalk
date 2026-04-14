@@ -1,4 +1,4 @@
-package ruquest
+package request
 
 import "LittleTalk/models/enum"
 
