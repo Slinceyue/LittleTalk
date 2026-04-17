@@ -1,41 +1,80 @@
 package service
 
 import (
-	"LittleTalk/api/response"
+	"LittleTalk/api/request"
+	"LittleTalk/dao"
+	"LittleTalk/models"
 	"LittleTalk/models/enum"
+	"errors"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"os"
 	"path/filepath"
-
-	"github.com/gin-gonic/gin"
+	"time"
 )
 
-func UploadGeneric(c *gin.Context) {
-	uploadType := c.PostForm("type")
-	if !enum.IsValidUploadType(uploadType) {
-		response.FailWithCode(c, enum.CodeFileTypeWrong)
-		return
+func uploadPath(fileType enum.FileType, id uint) (string, error) {
+	var path string
+	if !enum.IsValidUploadType(fileType.String()) {
+		return "", errors.New(enum.CodeFileTypeWrong.String())
 	}
-	file, err := c.FormFile("file")
+	path = fmt.Sprintf("static/uploads/%s/%d", fileType.String(), id)
+	return path, nil
+}
+
+func UploadFile(req request.FileRequest, file *multipart.FileHeader, id uint) (string, error) {
+	// 1. 文件判空
+	if file == nil || file.Size == 0 {
+		return "", errors.New("文件不能为空")
+	}
+	if file.Size > 40<<20 {
+		return "", errors.New("文件过大")
+	}
+	// 2. 获取存储目录
+	filePath, err := uploadPath(req.FileType, id)
 	if err != nil {
-		response.FailWithCode(c, enum.CodeFileWrong)
+		return "", err
 	}
+	err = os.MkdirAll(filePath, 0755)
+	if err != nil {
+		return "", errors.New("创建目录失败")
+	}
+	// 4. 获取文件后缀
 	ext := filepath.Ext(file.Filename)
-	if ext == "" {
-		c.JSON(400, gin.H{"error": "文件无后缀"})
-		return
+
+	// 5. 生成唯一文件名（时间戳+微秒，永不重复）
+	uniqueName := fmt.Sprintf("%d%s", time.Now().UnixMicro(), ext)
+
+	saveFullPath := fmt.Sprintf("%s/%s", filePath, uniqueName)
+
+	src, err := file.Open()
+	if err != nil {
+		return "", errors.New("打开文件失败")
 	}
-	var maxSize int64
-	var allowExts map[string]bool
+	defer src.Close()
+	// 8. 创建目标文件
+	dst, err := os.Create(saveFullPath)
+	if err != nil {
+		return "", errors.New("创建文件失败")
+	}
+	defer dst.Close()
 
-	switch uploadType {
-	case "avatar":
-		// 头像：小尺寸 + 图片
-		maxSize = 2 << 20 // 2MB
-		allowExts = map[string]bool{".jpg": true, ".jpeg": true, ".png": true}
+	// 9. 写入文件
+	_, err = io.Copy(dst, src)
+	if err != nil {
+		return "", errors.New("文件上传失败")
+	}
+	model := models.File{
+		UserID:    id,
+		FileType:  req.FileType.String(),
+		RealName:  file.Filename,
+		SavedName: uniqueName,
+		Src:       saveFullPath,
+		Size:      file.Size,
+	}
+	dao.NewFile(&model)
 
-	case "image":
-		// 普通图片：稍大
-		maxSize = 10 << 20 // 10MB
-		allowExts = map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true}
-
-		switch uploadType {
+	// 10. 返回可访问的路径（给前端/数据库存）
+	return saveFullPath, nil
 }

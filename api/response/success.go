@@ -12,11 +12,11 @@ func (res Response) OKJson(c *gin.Context) {
 }
 
 func OK(c *gin.Context) {
-	Response{Code: enum.CodeSuccess.Int(), Message: enum.CodeSuccess.Message(), Data: nil}.OKJson(c)
+	Response{Code: enum.CodeSuccess.Int(), Message: enum.CodeSuccess.String(), Data: nil}.OKJson(c)
 }
 
 func OKWithData(c *gin.Context, data interface{}) {
-	Response{Code: enum.CodeSuccess.Int(), Message: enum.CodeSuccess.Message(), Data: data}.OKJson(c)
+	Response{Code: enum.CodeSuccess.Int(), Message: enum.CodeSuccess.String(), Data: data}.OKJson(c)
 }
 
 func OKWithMsg(c *gin.Context, msg string) {

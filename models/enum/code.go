@@ -56,8 +56,8 @@ var codeMsgMap = map[ResCode]string{
 	CodeFileWrong:          "文件数据错误",
 }
 
-// Message 获取状态码对应的提示信息
-func (c ResCode) Message() string {
+// String 获取状态码对应的提示信息
+func (c ResCode) String() string {
 	msg, ok := codeMsgMap[c]
 	if !ok {
 		return codeMsgMap[CodeServerError]

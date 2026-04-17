@@ -12,7 +12,7 @@ func (res Response) FailJson(c *gin.Context) {
 }
 
 func FailWithCode(c *gin.Context, code enum.ResCode) {
-	Response{Code: code.Int(), Message: code.Message()}.FailJson(c)
+	Response{Code: code.Int(), Message: code.String()}.FailJson(c)
 }
 
 func FailWithError(c *gin.Context, code enum.ResCode, e error) {
