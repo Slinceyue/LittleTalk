@@ -23,7 +23,7 @@ func uploadPath(fileType enum.FileType, id uint) (string, error) {
 	return path, nil
 }
 
-func UploadFile(req request.FileRequest, file *multipart.FileHeader, id uint) (string, error) {
+func UploadFile(req request.FileUploadRequest, file *multipart.FileHeader, id uint) (string, error) {
 	// 1. 文件判空
 	if file == nil || file.Size == 0 {
 		return "", errors.New("文件不能为空")
@@ -73,8 +73,10 @@ func UploadFile(req request.FileRequest, file *multipart.FileHeader, id uint) (s
 		Src:       saveFullPath,
 		Size:      file.Size,
 	}
-	dao.NewFile(&model)
-
+	err = dao.NewFile(&model)
+	if err != nil {
+		return "", errors.New(enum.CodeFileUploadFail.String())
+	}
 	// 10. 返回可访问的路径（给前端/数据库存）
 	return saveFullPath, nil
 }

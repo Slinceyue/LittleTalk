@@ -2,6 +2,6 @@ package request
 
 import "LittleTalk/models/enum"
 
-type FileRequest struct {
-	FileType enum.FileType `json:"file_type"binding:"required" label:"文件类型"`
+type FileUploadRequest struct {
+	FileType enum.FileType `form:"file_type" json:"file_type"binding:"required" label:"文件类型"`
 }
