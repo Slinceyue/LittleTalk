@@ -1,7 +1,16 @@
 package router
 
-import "github.com/gin-gonic/gin"
+import (
+	"LittleTalk/handler"
+
+	"github.com/gin-gonic/gin"
+)
 
 func UserRouter(r *gin.RouterGroup) {
+	UserAvatar(r)
+}
 
+func UserAvatar(r *gin.RouterGroup) {
+	r.Static("/static/avatar", "static/avatar")
+	r.POST("/uploadavatar", handler.Api.UserHandler.AvatarUpload)
 }

@@ -9,7 +9,6 @@ type User struct {
 	Username string `gorm:"size:10;unique;not null" json:"username"`
 	Password string `gorm:"size:256;not null"        json:"password"`
 	Sex      int8   `gorm:"default:0"      json:"sex"`
-	Avatar   string `gorm:"size:255;not null"       json:"avatar"`
 	Intro    string `gorm:"size:255;default:''" json:"intro"`
 
 	Phone    string `gorm:"size:16;unique;index" json:"phone"`

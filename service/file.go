@@ -19,7 +19,7 @@ func uploadPath(fileType enum.FileType, id uint) (string, error) {
 	if !enum.IsValidUploadType(fileType.String()) {
 		return "", errors.New(enum.CodeFileTypeWrong.String())
 	}
-	path = fmt.Sprintf("static/uploads/%s/%d", fileType.String(), id)
+	path = fmt.Sprintf("static/files/%s/%d", fileType.String(), id)
 	return path, nil
 }
 
@@ -78,5 +78,22 @@ func UploadFile(req request.FileUploadRequest, file *multipart.FileHeader, id ui
 		return "", errors.New(enum.CodeFileUploadFail.String())
 	}
 	// 10. 返回可访问的路径（给前端/数据库存）
-	return saveFullPath, nil
+	return uniqueName, nil
+}
+
+func UploadPath(readRequest request.FileReadRequest) (string, error) {
+	if !enum.IsValidUploadType(readRequest.FileType.String()) {
+		return "", errors.New("文件类型错误")
+	}
+	path := fmt.Sprintf("static/files/%s/%d/%s", readRequest.FileType.String(), readRequest.FromID, readRequest.FileName)
+	if !IsFileExists(path) {
+		return "", errors.New("文件不存在")
+	}
+	return path, nil
+}
+func IsFileExists(path string) bool {
+	// 核心代码：就这一行
+	_, err := os.Stat(path)
+	// 没有错误 或者 错误不是“文件不存在” → 存在
+	return !os.IsNotExist(err)
 }

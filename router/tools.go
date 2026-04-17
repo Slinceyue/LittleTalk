@@ -11,4 +11,5 @@ func ToolsRouter(r *gin.RouterGroup) {
 }
 func FileRouter(r *gin.RouterGroup) {
 	r.POST("/uploadfile", handler.Api.ToolsHandler.FileUploadHandler)
+	r.GET("/downloadfile", handler.Api.ToolsHandler.ReadFileHandler)
 }
