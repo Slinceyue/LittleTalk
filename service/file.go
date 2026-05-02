@@ -5,6 +5,7 @@ import (
 	"LittleTalk/dao"
 	"LittleTalk/models"
 	"LittleTalk/models/enum"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -23,7 +24,7 @@ func uploadPath(fileType enum.FileType, id uint) (string, error) {
 	return path, nil
 }
 
-func UploadFile(req request.FileUploadRequest, file *multipart.FileHeader, id uint) (string, error) {
+func UploadFile(ctx context.Context, req request.FileUploadRequest, file *multipart.FileHeader, id uint) (string, error) {
 	// 1. 文件判空
 	if file == nil || file.Size == 0 {
 		return "", errors.New("文件不能为空")
@@ -73,7 +74,7 @@ func UploadFile(req request.FileUploadRequest, file *multipart.FileHeader, id ui
 		Src:       saveFullPath,
 		Size:      file.Size,
 	}
-	err = dao.NewFile(&model)
+	err = dao.NewFile(ctx, &model)
 	if err != nil {
 		return "", errors.New(enum.CodeFileUploadFail.String())
 	}

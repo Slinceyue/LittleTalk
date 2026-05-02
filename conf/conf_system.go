@@ -3,10 +3,11 @@ package conf
 import "fmt"
 
 type System struct {
-	IP      string `yaml:"ip"`
-	Port    int    `yaml:"port"`
-	GinMode string `yaml:"gin_mode"`
-	Env     string `yaml:"env"`
+	IP            string `yaml:"ip"`
+	Port          int    `yaml:"port"`
+	GinMode       string `yaml:"gin_mode"`
+	Env           string `yaml:"env"`
+	ServerTimeout int    `yaml:"server_time_out"`
 }
 
 func (s System) Addr() string {

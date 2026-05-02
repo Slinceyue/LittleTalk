@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -10,7 +11,7 @@ import (
 	"strings"
 )
 
-func UploadAvatar(file *multipart.FileHeader, id uint) error {
+func UploadAvatar(ctx context.Context, file *multipart.FileHeader, id uint) error {
 	// 1. 文件判空
 	if file == nil || file.Size == 0 {
 		return errors.New("文件不能为空1")

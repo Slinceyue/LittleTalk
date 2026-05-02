@@ -10,7 +10,7 @@ import (
 
 func (UserHandler) AvatarUpload(c *gin.Context) {
 	file, _ := c.FormFile("avatar")
-	err := service.UploadAvatar(file, c.GetUint("id"))
+	err := service.UploadAvatar(c.Request.Context(), file, c.GetUint("id"))
 	if err != nil {
 		response.FailWithError(c, enum.CodeFileLoadFail, err)
 		return

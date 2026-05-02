@@ -2,7 +2,6 @@ package handler
 
 import (
 	"LittleTalk/handler/friend_handler"
-	"LittleTalk/handler/login_handler"
 	"LittleTalk/handler/message_handler"
 	"LittleTalk/handler/middle_handler"
 	"LittleTalk/handler/tools_handler"
@@ -10,7 +9,7 @@ import (
 )
 
 type AllApi struct {
-	login_handler.LoginHandler
+	user_handler.LoginHandler
 	message_handler.MessageHandler
 	friend_handler.FriendHandler
 	user_handler.UserHandler

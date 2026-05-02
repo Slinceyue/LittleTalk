@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	ipUtils "LittleTalk/utils/ip"
+
 	"github.com/lionsoul2014/ip2region/binding/golang/xdb"
 	"github.com/sirupsen/logrus"
 )
@@ -15,7 +16,7 @@ func InitIPDB() {
 	dbath := "init/ip2region_v4.xdb"
 	_searcher, err := xdb.NewWithFileOnly(xdb.IPv4, dbath)
 	if err != nil {
-		logrus.Fatal("ip数据库加载失败 %s", err)
+		logrus.Fatalf("ip数据库加载失败 %s", err)
 		return
 	}
 	searcher = _searcher

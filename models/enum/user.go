@@ -8,6 +8,9 @@ const (
 	FemaleType Sex = 2
 )
 
+func (s Sex) int() int8 {
+	return int8(s)
+}
 func (s Sex) String() string {
 	switch s {
 	case MaleType:

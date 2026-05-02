@@ -20,7 +20,7 @@ func (ToolsHandler) FileUploadHandler(c *gin.Context) {
 		response.FailWithError(c, enum.CodeFileLoadFail, err)
 		return
 	}
-	str, err := service.UploadFile(fileUploadReq, file, c.GetUint("id"))
+	str, err := service.UploadFile(c.Request.Context(), fileUploadReq, file, c.GetUint("id"))
 	if err != nil {
 		response.FailWithError(c, enum.CodeFileUploadFail, err)
 		return
@@ -38,6 +38,7 @@ func (ToolsHandler) ReadFileHandler(c *gin.Context) {
 	var path, err = service.UploadPath(fileUploadReq)
 	if err != nil {
 		response.FailWithError(c, enum.CodeFileLoadFail, err)
+		return
 	}
 	c.File(path)
 }

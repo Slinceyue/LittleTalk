@@ -1,17 +1,17 @@
 package dao
 
 import (
-	"LittleTalk/api/request"
-	"errors"
+	"LittleTalk/global"
+	"LittleTalk/models"
+	"context"
+	"time"
 )
 
-func CreatUser(user *request.NewUserRequest) error {
-	if user == nil {
-		err := errors.New("用户请求体异常")
-		return err
-	}
-	if user.Username == "" || user.Password == "" {
-		err := errors.New("用户名不能为空")
+func CreatUser(ctx context.Context, user models.User) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(global.Config.System.ServerTimeout)*time.Second)
+	defer cancel()
+	err := global.DB.Create(&user).Error
+	if err != nil {
 		return err
 	}
 	return nil

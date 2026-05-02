@@ -15,7 +15,3 @@ type UserInfo struct {
 	LastLogin time.Time         `json:"last_login"`
 	IP        string            `json:"ip"`
 }
-
-func (UserHandler) UserInfo(userID uint) {
-
-}

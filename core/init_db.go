@@ -35,7 +35,7 @@ func InitDB() *gorm.DB {
 			Policy: dbresolver.RandomPolicy{},
 		}))
 		if err != nil {
-			logrus.Fatal("读写配置错误%s", err)
+			logrus.Fatalf("读写配置错误%s", err)
 		}
 	}
 

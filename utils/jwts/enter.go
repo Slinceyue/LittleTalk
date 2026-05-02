@@ -23,7 +23,7 @@ func GetToken(claims Claims) (string, error) {
 	cla := MyClaims{
 		Claims: claims,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(global.Config.Jwt.Expire) * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(global.Config.Jwt.Expire) * 24 * time.Hour)),
 			Issuer:    global.Config.Jwt.Issuer,
 		},
 	}

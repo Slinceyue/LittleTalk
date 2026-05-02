@@ -9,9 +9,8 @@ type Message struct {
 	Room        Room `gorm:"foreignKey:RoomID"`
 	RoomID      uint `gorm:"index" json:"room_id"`
 	MessageType int8 `gorm:"default:0" json:"message_type"`
-	IsRead      bool `gorm:"default:false" json:"is_read"` // 是否已读
 
-	Content string `gorm:"size:1024;not null"json:"content"`
+	Content string `gorm:"size:1024;not null" json:"content"`
 
 	FileID uint `gorm:"index" json:"file_id"`
 	File   File `gorm:"foreignKey:FileID;"`
