@@ -574,7 +574,12 @@ function clearUserLocalCache() {
     
     // 清除内存中的缓存
     onlineStatusCache.clear();
-    chatHistories.clear();
+    confirmedMessages.clear();
+    cache.chatHistory = {};
+    // 清除未读消息
+    Object.keys(unreadMessages).forEach(key => delete unreadMessages[key]);
+    unreadMessageCount = 0;
+    updateMessageBadge();
     console.log('本地用户缓存已清除');
 }
 
@@ -1311,7 +1316,7 @@ window.addEventListener('beforeunload', async (e) => {
     
     // 发送下线请求，使用 keepalive 确保请求被发送
     try {
-        await fetch('/api/v1/user/offline', {
+        await fetch('/api/offline', {
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + getToken(),
@@ -1329,8 +1334,11 @@ function logout() {
     // 先发送下线请求
     const token = getToken();
     if (token) {
-        axios.post('/api/v1/user/offline').catch(() => {});
+        axios.post('/api/offline').catch(() => {});
     }
+    
+    // 清除本地缓存
+    clearUserLocalCache();
     
     deleteCookie('token');
     delete axios.defaults.headers.common['Authorization'];
