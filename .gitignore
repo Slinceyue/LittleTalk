@@ -1,0 +1,10 @@
+.idea
+local_settings.yaml
+tmp
+main
+static/avatar/*
+test/*
+logs/*
+static/files/file/*
+static/files/image/*
+main.exe

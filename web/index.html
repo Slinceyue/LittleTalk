@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LittleTalk - 轻量聊天</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="js/app.js?v=6"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- 登录页面 -->
+    <div id="login-page" class="login-page">
+        <div class="login-container">
+            <div class="login-logo">
+                <div class="login-logo-icon">💬</div>
+                <h1 class="login-title">LittleTalk</h1>
+            </div>
+            
+            <!-- 登录表单 -->
+            <div id="login-form">
+                <div class="form-group">
+                    <label for="login-username">用户名</label>
+                    <input type="text" id="login-username" value="test" placeholder="请输入用户名">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">密码</label>
+                    <input type="password" id="login-password" value="123456" placeholder="请输入密码">
+                </div>
+                <button class="btn btn-primary" onclick="loginTest()">
+                    <span>登录</span>
+                </button>
+                <div id="login-response" class="response"></div>
+            </div>
+            
+            <div class="register-link">
+                还没有账号？<a href="#" onclick="showRegisterForm()">立即注册</a>
+            </div>
+
+            <!-- 注册表单 -->
+            <div id="register-form" class="hidden">
+                <div class="form-group">
+                    <label for="register-username">用户名</label>
+                    <input type="text" id="register-username" placeholder="请输入用户名（2-20位）">
+                </div>
+                <div class="form-group">
+                    <label for="register-password">密码</label>
+                    <input type="password" id="register-password" placeholder="请输入密码（至少6位）">
+                </div>
+                <div class="form-group">
+                    <label for="register-sex">性别</label>
+                    <select id="register-sex" class="form-select">
+                        <option value="0">未知</option>
+                        <option value="1">男</option>
+                        <option value="2">女</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="register-birthday">生日</label>
+                    <input type="date" id="register-birthday" class="form-date">
+                </div>
+                <button class="btn btn-primary" onclick="registerTest()">
+                    <span>注册</span>
+                </button>
+                <div id="register-response" class="response"></div>
+                <div class="register-link">
+                    已有账号？<a href="#" onclick="showLoginForm()">立即登录</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主页面 -->
+    <div id="main-page" class="main-page hidden">
+        <div class="header">
+            <h1 class="header-title">LittleTalk</h1>
+            <div class="header-actions">
+                <button class="header-btn" onclick="showAddFriend()" title="添加好友">+</button>
+            </div>
+        </div>
+
+        <div class="content" id="main-content">
+            <!-- 消息列表（最近联系人） -->
+            <div id="message-tab" class="tab-content">
+                <div class="section-title">最近联系人</div>
+                <ul class="message-list" id="message-list"></ul>
+            </div>
+
+            <!-- 好友列表 -->
+            <div id="friend-tab" class="tab-content hidden">
+                <div class="friend-tab-header">
+                    <div class="friend-tab-title">好友</div>
+                    <button class="friend-request-btn" onclick="showFriendRequestModal()">
+                        好友请求
+                        <span id="friend-request-count" class="friend-request-count">0</span>
+                    </button>
+                </div>
+                <ul class="friend-list" id="friend-list"></ul>
+            </div>
+
+            <!-- 好友请求弹窗 -->
+            <div id="friend-request-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>好友请求</h3>
+                        <button class="modal-close" onclick="closeFriendRequestModal()">×</button>
+                    </div>
+                    <ul class="friend-request-list" id="friend-request-list"></ul>
+                </div>
+            </div>
+
+            <!-- 我的页面 -->
+            <div id="profile-tab" class="tab-content hidden">
+                <div class="profile-section">
+                    <div class="profile-header" onclick="showProfileEdit()">
+                        <div class="profile-avatar" id="profile-avatar">头</div>
+                        <div class="profile-info">
+                            <div class="profile-name" id="profile-name">未登录</div>
+                            <div class="profile-id" id="profile-id">ID: </div>
+                        </div>
+                        <span class="profile-edit-hint">编辑</span>
+                    </div>
+                    <div class="profile-details" id="profile-details">
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">性别</span>
+                            <span class="profile-detail-value" id="profile-sex">未知</span>
+                        </div>
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">生日</span>
+                            <span class="profile-detail-value" id="profile-birthday">未设置</span>
+                        </div>
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">注册时间</span>
+                            <span class="profile-detail-value" id="profile-create-time">-</span>
+                        </div>
+                    </div>
+                    <ul class="profile-menu">
+                        <li class="profile-menu-item" onclick="uploadAvatar()">
+                            <span class="profile-menu-label">修改头像</span>
+                            <span class="profile-menu-arrow">›</span>
+                        </li>
+                        <li class="profile-menu-item" onclick="logout()">
+                            <span class="profile-menu-label">退出登录</span>
+                            <span class="profile-menu-arrow">›</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-bar">
+            <div class="tab-item active" onclick="switchTab('message-tab', event)">
+                <div class="tab-icon">💬</div>
+                <div class="tab-label">消息</div>
+                <span id="message-unread-badge" class="unread-badge hidden">0</span>
+            </div>
+            <div class="tab-item" onclick="switchTab('friend-tab', event)">
+                <div class="tab-icon">👥</div>
+                <div class="tab-label">好友</div>
+                <span id="friend-request-badge" class="unread-badge hidden">0</span>
+            </div>
+            <div class="tab-item" onclick="switchTab('profile-tab', event)">
+                <div class="tab-icon">👤</div>
+                <div class="tab-label">我的</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 好友申请通知弹窗 -->
+    <div id="friend-request-toast" class="toast-notification hidden">
+        <div class="toast-content">
+            <div class="toast-title">新的好友申请</div>
+            <div class="toast-body" id="friend-request-toast-body"></div>
+            <div class="toast-actions">
+                <button class="toast-btn accept" onclick="handleFriendRequestToast('accept')">接受</button>
+                <button class="toast-btn reject" onclick="handleFriendRequestToast('reject')">拒绝</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 新消息通知 -->
+    <div id="new-message-toast" class="toast-notification hidden">
+        <div class="toast-content">
+            <div class="toast-body" id="new-message-toast-body"></div>
+            <div class="toast-actions">
+                <button class="toast-btn accept" onclick="openChatFromToast()">查看</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 图片预览遮罩 -->
+    <div id="image-preview-overlay" class="image-preview-overlay hidden" onclick="closeImagePreview()">
+        <span class="preview-close" onclick="closeImagePreview()">×</span>
+        <img id="preview-image" class="preview-image" src="" alt="预览">
+    </div>
+
+    <!-- 聊天页面 -->
+    <div id="chat-page" class="chat-page hidden">
+        <div class="chat-header">
+            <div class="chat-header-left">
+                <button class="chat-back" onclick="backToMain()">‹</button>
+                <span class="chat-name" id="chat-name">聊天对象</span>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="showChatBgSettings()" title="聊天背景">🎨</button>
+                <button class="header-btn" onclick="showFriendInfo(currentChatId)" title="好友信息">ℹ️</button>
+            </div>
+        </div>
+        <div class="chat-content" id="chat-content"></div>
+        <div class="chat-input">
+            <button class="chat-attach" onclick="document.getElementById('image-input').click()" title="发送图片">🖼️</button>
+            <input type="file" id="image-input" accept="image/*" style="display:none" onchange="handleFileSelect(this.files[0])">
+            <button class="chat-attach" onclick="document.getElementById('file-input').click()" title="发送文件">📎</button>
+            <input type="file" id="file-input" style="display:none" onchange="handleFileSelect(this.files[0])">
+            <input type="text" class="chat-input-field" id="chat-message" placeholder="输入消息...">
+            <button class="chat-send" onclick="sendChatMessage()">➤</button>
+        </div>
+    </div>
+
+    <!-- 添加好友页面 -->
+    <div id="add-friend-page" class="main-page hidden">
+        <div class="header">
+            <div class="chat-header-left">
+                <button class="chat-back" onclick="backToMain()">‹</button>
+                <span class="chat-name">添加好友</span>
+            </div>
+        </div>
+        <div class="content">
+            <div class="add-friend-form">
+                <div class="form-group">
+                    <label for="friend-id">好友ID</label>
+                    <input type="number" id="friend-id" placeholder="请输入好友ID">
+                </div>
+                <button class="btn btn-primary" onclick="sendFriendRequest()">发送好友请求</button>
+                <div id="add-friend-response" class="response"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 背景设置面板 -->
+    <div id="bg-setting-panel" class="bg-setting-panel hidden">
+        <div class="bg-panel-mask" onclick="closeBgSetting()"></div>
+        <div class="bg-panel-content">
+            <div class="bg-panel-header">
+                <button class="bg-panel-close" onclick="closeBgSetting()">×</button>
+                <h3 class="bg-panel-title">聊天背景</h3>
+                <button class="bg-panel-reset" onclick="resetBg()">恢复默认</button>
+            </div>
+            <div class="bg-panel-body">
+                <!-- 预览区 -->
+                <div class="bg-preview-card">
+                    <div class="bg-preview-phone">
+                        <div class="bg-phone-screen" id="bg-chat-preview"></div>
+                        <div class="bg-phone-messages">
+                            <div class="bg-msg left">
+                                <div class="bg-avatar"></div>
+                                <div class="bg-bubble">嗨~ 在吗？</div>
+                            </div>
+                            <div class="bg-msg right">
+                                <div class="bg-bubble">在的，怎么啦？</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-preview-name" id="bg-name-display">默认背景</div>
+                </div>
+                <!-- 选择区 -->
+                <div class="bg-options-card">
+                    <div class="bg-option-section">
+                        <div class="bg-option-header">🎨 纯色</div>
+                        <div class="bg-color-grid" id="bg-solid-list"></div>
+                    </div>
+                    <div class="bg-option-section">
+                        <div class="bg-option-header">🌈 渐变</div>
+                        <div class="bg-color-grid" id="bg-gradient-list"></div>
+                    </div>
+                    <div class="bg-option-section">
+                        <div class="bg-option-header">📷 自定义</div>
+                        <div class="bg-custom-area">
+                            <div class="bg-custom-preview" id="bg-custom-preview">
+                                <img src="" alt="" id="bg-custom-img">
+                                <span class="bg-custom-tag">当前使用</span>
+                            </div>
+                            <label class="bg-upload-btn">
+                                <input type="file" accept="image/*" onchange="uploadBgInline(this)" style="display:none">
+                                <span>+ 上传图片</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-panel-footer">
+                <button class="bg-apply-btn" onclick="applyBgAndClose()">应用此背景</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
