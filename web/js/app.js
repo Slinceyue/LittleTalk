@@ -1005,7 +1005,9 @@ async function uploadAvatar() {
 
         try {
             const responseDiv = document.getElementById('profile-response');
-            responseDiv.textContent = '上传中...';
+            if (responseDiv) {
+                responseDiv.textContent = '上传中...';
+            }
             const { data } = await axios.post('/api/uploadavatar', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
@@ -1018,11 +1020,19 @@ async function uploadAvatar() {
                 // 上传成功后刷新自己的头像显示
                 refreshSelfAvatar();
             } else {
-                responseDiv.textContent = '上传失败: ' + (data.message || '未知错误');
+                if (responseDiv) {
+                    responseDiv.textContent = '上传失败: ' + (data.message || '未知错误');
+                } else {
+                    alert('上传失败: ' + (data.message || '未知错误'));
+                }
             }
         } catch (error) {
             const errorMessage = error.response?.data?.message || error.message || '网络错误';
-            document.getElementById('profile-response').textContent = '错误: ' + errorMessage;
+            if (responseDiv) {
+                responseDiv.textContent = '错误: ' + errorMessage;
+            } else {
+                alert('头像上传错误: ' + errorMessage);
+            }
         }
     };
     input.click();
