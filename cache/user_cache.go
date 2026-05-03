@@ -1,13 +1,57 @@
 package cache
 
 import (
+	"LittleTalk/api/response"
 	"LittleTalk/global"
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/go-redis/redis/v8"
 )
+
+// GetUserInfoCache 获取用户信息缓存
+func GetUserInfoCache(ctx context.Context, userID uint) (*response.SelfUserResponse, error) {
+	key := fmt.Sprintf("user:info:%d", userID)
+	data, err := global.RDB.Get(ctx, key).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	var userInfo response.SelfUserResponse
+	if err := json.Unmarshal([]byte(data), &userInfo); err != nil {
+		return nil, err
+	}
+	return &userInfo, nil
+}
+
+// SetUserInfoCache 设置用户信息缓存
+func SetUserInfoCache(ctx context.Context, userID uint, userInfo *response.SelfUserResponse) error {
+	key := fmt.Sprintf("user:info:%d", userID)
+	data, err := json.Marshal(userInfo)
+	if err != nil {
+		return err
+	}
+
+	expire := ExpireUserInfo()
+	return global.RDB.Set(ctx, key, data, expire).Err()
+}
+
+// DelUserInfoCache 删除用户信息缓存
+func DelUserInfoCache(ctx context.Context, userID uint) error {
+	key := fmt.Sprintf("user:info:%d", userID)
+	return global.RDB.Del(ctx, key).Err()
+}
+
+// ExpireUserInfo 获取用户信息缓存过期时间
+func ExpireUserInfo() time.Duration {
+	expire := global.Config.Cache.UserInfoExpire
+	if expire <= 0 {
+		expire = 3600 // 默认1小时
+	}
+	return time.Duration(expire) * time.Second
+}
 
 func SetUserLoginStatus(ctx context.Context, userID uint, token string) error {
 	err := global.RDB.Set(ctx, fmt.Sprintf("user:token:%d", userID), token, ExpireToken()).Err()

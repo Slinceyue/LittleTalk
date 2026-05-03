@@ -122,17 +122,16 @@ func (UserHandler) UpdateUserInfo(c *gin.Context) {
 
 	code := service.UserInfoUpdate(c.Request.Context(), userID, req)
 	if code != enum.CodeSuccess {
-		// 处理错误码
-		switch code {
-		case enum.CodeUserNotFound:
-			response.FailWithMsg(c, enum.CodeUserNotFound, "用户不存在")
-		case enum.CodeUserAlreadyExist:
-			response.FailWithMsg(c, enum.CodeUserAlreadyExist, "用户名已被占用")
-		default:
-			response.FailWithMsg(c, enum.CodeServerError, "更新失败")
-		}
+		// 直接使用错误码的默认消息
+		response.FailWithMsg(c, code, code.String())
 		return
 	}
 
-	response.OK(c)
+	// 更新成功后，返回最新用户信息
+	userInfo, err := service.GetUser(c.Request.Context(), userID)
+	if err != nil {
+		response.OK(c)
+		return
+	}
+	response.OKWithData(c, userInfo)
 }

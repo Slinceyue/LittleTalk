@@ -34,14 +34,17 @@ const (
 	CodeServerError     ResCode = 1500 // 服务器内部错误
 
 	// ====== 用户模块 (2001-2999) ======
-	CodeUserNotFound      ResCode = 2001 // 用户不存在
-	CodeUserAlreadyExist  ResCode = 2002 // 用户已存在
-	CodePasswordWrong     ResCode = 2003 // 密码错误
-	CodePasswordWeak      ResCode = 2004 // 密码强度不足（至少6位）
-	CodeInvalidUsername   ResCode = 2005 // 用户名格式错误（仅支持中英文、数字、下划线，2-20位）
-	CodeInvalidPassword   ResCode = 2006 // 密码格式错误（至少6位）
-	CodeUserCreateFailed   ResCode = 2100 // 用户创建失败
-	CodeUserUpdateFailed   ResCode = 2101 // 用户信息更新失败
+	CodeUserNotFound       ResCode = 2001 // 用户不存在
+	CodeUserAlreadyExist   ResCode = 2002 // 用户已存在
+	CodePasswordWrong      ResCode = 2003 // 密码错误
+	CodePasswordWeak       ResCode = 2004 // 密码强度不足（至少6位）
+	CodeInvalidUsername    ResCode = 2005 // 用户名格式错误（仅支持中英文、数字、下划线，2-20位）
+	CodeInvalidPassword    ResCode = 2006 // 密码格式错误（至少6位）
+	CodeUsernameAlreadyExist ResCode = 2007 // 用户名已被占用
+	CodePhoneAlreadyExist   ResCode = 2008 // 手机号已被占用
+	CodeEmailAlreadyExist   ResCode = 2009 // 邮箱已被占用
+	CodeUserCreateFailed    ResCode = 2100 // 用户创建失败
+	CodeUserUpdateFailed    ResCode = 2101 // 用户信息更新失败
 
 	// ====== 好友模块 (3001-3999) ======
 	CodeFriendAlreadyExist     ResCode = 3001 // 已是好友，无需重复添加
@@ -88,14 +91,17 @@ var codeMsgMap = map[ResCode]string{
 	CodeTooManyRequests:     "请求过于频繁，请稍后重试",
 	CodeServerError:         "服务器开小差了，请稍后重试",
 
-	CodeUserNotFound:        "用户不存在",
-	CodeUserAlreadyExist:    "用户名已存在",
-	CodePasswordWrong:       "密码错误",
-	CodePasswordWeak:        "密码强度不足，请使用至少6位字符",
-	CodeInvalidUsername:     "用户名格式错误，仅支持中英文、数字、下划线，2-20位",
-	CodeInvalidPassword:     "密码格式错误，请使用至少6位字符",
-	CodeUserCreateFailed:    "用户创建失败，请稍后重试",
-	CodeUserUpdateFailed:    "用户信息更新失败，请稍后重试",
+	CodeUserNotFound:         "用户不存在",
+	CodeUserAlreadyExist:     "用户名已存在",
+	CodePasswordWrong:        "密码错误",
+	CodePasswordWeak:         "密码强度不足，请使用至少6位字符",
+	CodeInvalidUsername:      "用户名格式错误，仅支持中英文、数字、下划线，2-20位",
+	CodeInvalidPassword:      "密码格式错误，请使用至少6位字符",
+	CodeUsernameAlreadyExist: "用户名已被占用",
+	CodePhoneAlreadyExist:    "手机号已被其他用户使用",
+	CodeEmailAlreadyExist:    "邮箱已被其他用户使用",
+	CodeUserCreateFailed:     "用户创建失败，请稍后重试",
+	CodeUserUpdateFailed:     "用户信息更新失败，请稍后重试",
 
 	CodeFriendAlreadyExist:     "已是好友，无需重复添加",
 	CodeFriendRequestExist:     "好友申请已发送，请勿重复提交",

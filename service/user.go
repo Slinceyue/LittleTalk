@@ -14,6 +14,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -106,8 +107,15 @@ func LoginUser(ctx context.Context, loginRequest request.LoginRequest) (LoginRes
 	}, nil
 }
 
-// GetUser 获取当前用户信息
+// GetUser 获取当前用户信息（优先从缓存获取）
 func GetUser(ctx context.Context, userID uint) (response.SelfUserResponse, error) {
+	// 先尝试从缓存获取
+	cachedUser, err := cache.GetUserInfoCache(ctx, userID)
+	if err == nil && cachedUser != nil {
+		return *cachedUser, nil
+	}
+
+	// 缓存未命中，从数据库获取
 	user, err := dao.GetByID(ctx, models.User{}, userID)
 	if err != nil {
 		return response.SelfUserResponse{}, enum.CodeUserNotFound
@@ -125,18 +133,28 @@ func GetUser(ctx context.Context, userID uint) (response.SelfUserResponse, error
 		createdAt = user.CreatedAt.Unix()
 	}
 
-	return response.SelfUserResponse{
+	userInfo := response.SelfUserResponse{
 		ID:        user.ID,
 		Avatar:    avatar,
 		Username:  user.Username,
 		Sex:       user.Sex,
 		Intro:     user.Intro,
+		Phone:     user.Phone,
+		Email:     user.Email,
 		Birthday:  user.Birthday,
+		Status:    user.Status,
 		CreatedAt: createdAt,
-	}, nil
+	}
+
+	// 写入缓存（异步，不阻塞返回）
+	go func() {
+		cache.SetUserInfoCache(context.Background(), userID, &userInfo)
+	}()
+
+	return userInfo, nil
 }
 
-// GetOtherUser 获取其他用户信息
+// GetOtherUser 获取其他用户信息（隐藏敏感信息）
 func GetOtherUser(ctx context.Context, userID uint) (response.OtherUserResponse, error) {
 	user, err := dao.GetByID(ctx, models.User{}, userID)
 	if err != nil {
@@ -156,6 +174,7 @@ func GetOtherUser(ctx context.Context, userID uint) (response.OtherUserResponse,
 		Sex:      user.Sex,
 		Intro:    user.Intro,
 		Birthday: user.Birthday,
+		// Phone 和 Email 不返回，保护隐私
 	}, nil
 }
 
@@ -197,35 +216,89 @@ func UserInfoUpdate(ctx context.Context, userID uint, req request.UserUpdateRequ
 		return enum.CodeUserNotFound
 	}
 
-	// 更新字段
-	if req.Username != "" {
+	// 记录是否有变更
+	hasChange := false
+
+	// 更新用户名（防重复检查）
+	if req.Username != "" && req.Username != user.Username {
 		// 检查用户名是否已被占用（排除自己）
 		var existingUser models.User
 		existingUser, err = dao.GetByKey(ctx, existingUser, "username", req.Username)
 		if err == nil && existingUser.ID != userID {
-			return enum.CodeUserAlreadyExist
+			return enum.CodeUsernameAlreadyExist
 		}
 		user.Username = req.Username
-	}
-	if req.Sex >= 0 && req.Sex <= 2 {
-		user.Sex = req.Sex
-	}
-	if req.Intro != "" {
-		user.Intro = req.Intro
-	}
-	if req.Birthday != "" {
-		user.Birthday = req.Birthday
+		hasChange = true
 	}
 
-	// 保存更新
+	// 更新性别
+	if req.Sex >= 0 && req.Sex <= 2 && req.Sex != user.Sex {
+		user.Sex = req.Sex
+		hasChange = true
+	}
+
+	// 更新个人简介
+	if req.Intro != user.Intro {
+		user.Intro = req.Intro
+		hasChange = true
+	}
+
+	// 更新手机号（防重复检查）
+	if req.Phone != "" && req.Phone != user.Phone {
+		// 检查手机号是否已被占用
+		var existingUser models.User
+		err = dao.GetByPhone(ctx, &existingUser, req.Phone)
+		if err == nil && existingUser.ID != userID {
+			return enum.CodePhoneAlreadyExist
+		}
+		user.Phone = req.Phone
+		hasChange = true
+	}
+
+	// 更新邮箱（防重复检查）
+	if req.Email != "" && req.Email != user.Email {
+		// 检查邮箱是否已被占用
+		var existingUser models.User
+		err = dao.GetByEmail(ctx, &existingUser, req.Email)
+		if err == nil && existingUser.ID != userID {
+			return enum.CodeEmailAlreadyExist
+		}
+		user.Email = req.Email
+		hasChange = true
+	}
+
+	// 更新生日
+	if req.Birthday != "" && req.Birthday != user.Birthday {
+		user.Birthday = req.Birthday
+		hasChange = true
+	}
+
+	// 如果没有任何变更，直接返回成功
+	if !hasChange {
+		return enum.CodeSuccess
+	}
+
+	// 延迟双删：先删除缓存，再更新数据库，再延迟删除缓存
+	// 第一次删除缓存
+	cache.DelUserInfoCache(ctx, userID)
+
+	// 保存更新到数据库
 	err = dao.UpdateUser(ctx, user)
 	if err != nil {
+		if dao.IsDuplicateEntry(err) {
+			// 根据具体错误类型判断
+			logrus.Error("[UserInfoUpdate] 更新失败，数据冲突: userID=", userID, ", err=", err)
+			return enum.CodeUserAlreadyExist
+		}
 		logrus.Error("[UserInfoUpdate] 更新用户信息失败: userID=", userID, ", err=", err)
 		return enum.CodeServerError
 	}
 
-	// 清除用户缓存
-	cache.DelUserCache(ctx, userID)
+	// 延迟删除缓存（延迟双删策略）
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		cache.DelUserInfoCache(context.Background(), userID)
+	}()
 
 	logrus.Info("[UserInfoUpdate] 用户信息更新成功: userID=", userID)
 	return enum.CodeSuccess
