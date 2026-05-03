@@ -11,6 +11,9 @@ func UserRouter(r *gin.RouterGroup) {
 
 	r.GET("/selfuserinfo", handler.Api.UserHandler.SelfUserInfo)
 	r.GET("/otheruserinfo", handler.Api.UserHandler.OtherUserInfo)
+	r.GET("/usersinfo", handler.Api.UserHandler.GetUsersInfo)
+	r.POST("/offline", handler.Api.UserHandler.Offline)
+	r.POST("/updateuserinfo", handler.Api.UserHandler.UpdateUserInfo)
 }
 
 func UserAvatar(r *gin.RouterGroup) {

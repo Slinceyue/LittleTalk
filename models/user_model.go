@@ -7,6 +7,7 @@ type User struct {
 	BackSalt string `gorm:"size:256" json:"back_salt"`
 	Sex      int8   `gorm:"default:0"      json:"sex"`
 	Intro    string `gorm:"size:255;default:''" json:"intro"`
+	Avatar   string `gorm:"size:255;default:''" json:"avatar"` // 头像路径
 
 	Phone    string `gorm:"size:16;unique;index;default:null" json:"phone"`
 	Email    string `gorm:"size:64;unique;index;default:null" json:"email"`

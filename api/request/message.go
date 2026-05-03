@@ -9,10 +9,14 @@ type TalkMessageRequest struct {
 	MessageType int8   `json:"message_type"`
 	Content     string `json:"content"`
 	FileID      uint   `json:"file_id"`
+	MsgID       string `json:"msg_id,omitempty"`
+	FileURL     string `json:"file_url,omitempty"`
+	FileName    string `json:"file_name,omitempty"`
 }
 type FriendMessageRequest struct {
-	FromID uint
-	ToID   uint
+	FromID       uint   `json:"from_id"`
+	ToID         uint   `json:"to_id"`
+	FromUsername string `json:"from_username"`
 }
 type MessageContext struct {
 	MsgType string

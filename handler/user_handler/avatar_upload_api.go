@@ -15,4 +15,5 @@ func (UserHandler) AvatarUpload(c *gin.Context) {
 		response.FailWithError(c, enum.CodeFileLoadFail, err)
 		return
 	}
+	response.OKWithMsg(c, "头像上传成功")
 }

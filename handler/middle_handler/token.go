@@ -18,9 +18,17 @@ func (MiddleHandler) ParseTokenHandler(c *gin.Context) {
 		return
 	}
 
-	// 从Cookie获取token
-	tokenStr, err := c.Cookie("token")
+	var tokenStr string
+	var err error
+
+	// 优先从Cookie获取token
+	tokenStr, err = c.Cookie("token")
 	if err != nil {
+		// 如果没有Cookie，尝试从URL参数获取token（WebSocket连接）
+		tokenStr = c.Query("token")
+	}
+
+	if tokenStr == "" {
 		response.FailWithCode(c, enum.CodeUnauthorized)
 		c.Abort()
 		return

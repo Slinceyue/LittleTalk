@@ -10,10 +10,18 @@ import (
 )
 
 func (ToolsHandler) FileUploadHandler(c *gin.Context) {
-	var fileUploadReq request.FileUploadRequest
-	if err := c.ShouldBind(&fileUploadReq); err != nil {
+	// 获取文件类型 (前端传 type，后端用 file_type)
+	fileType := c.PostForm("type")
+	if fileType == "" {
+		fileType = c.PostForm("file_type")
+	}
+	if fileType == "" {
 		response.FailWithCode(c, enum.CodeInvalidParam)
 		return
+	}
+
+	fileUploadReq := request.FileUploadRequest{
+		FileType: enum.FileType(fileType),
 	}
 	file, err := c.FormFile("file")
 	if err != nil {
