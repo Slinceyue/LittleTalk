@@ -2,6 +2,7 @@ package service
 
 import (
 	"LittleTalk/api/request"
+	"LittleTalk/api/response"
 	"LittleTalk/cache"
 	"LittleTalk/dao"
 	"LittleTalk/global"
@@ -82,39 +83,83 @@ func GetFriendList(ctx context.Context, userID uint) ([]FriendInfo, error) {
 	return friendInfos, nil
 }
 
-// getFriendDetailsByIDs 根据ID列表批量获取好友详细信息
+// getFriendDetailsByIDs 根据ID列表批量获取好友详细信息（使用缓存优化）
 func getFriendDetailsByIDs(ctx context.Context, friendIDs []uint) ([]FriendInfo, error) {
 	if len(friendIDs) == 0 {
 		return []FriendInfo{}, nil
 	}
 
-	var friends []models.User
-	err := global.DB.WithContext(ctx).Where("id IN ?", friendIDs).Find(&friends).Error
-	if err != nil {
-		return nil, fmt.Errorf("query friends: %w", err)
-	}
+	result := make([]FriendInfo, 0, len(friendIDs))
+	cacheMissIDs := make([]uint, 0, len(friendIDs))
 
-	// 直接查询内存WS连接状态，不再依赖Redis
-	onlineMap := make(map[uint]bool, len(friendIDs))
+	// 1. 优先从缓存获取用户信息
 	for _, id := range friendIDs {
-		onlineMap[id] = ws.ConnManager.IsOnline(id)
+		cachedUser, err := cache.GetUserInfoCache(ctx, id)
+		if err == nil && cachedUser != nil {
+			avatar := cachedUser.Avatar
+			if avatar == "" {
+				avatar = fmt.Sprintf("/static/avatar/%d.jpg", cachedUser.ID)
+			}
+			result = append(result, FriendInfo{
+				ID:       cachedUser.ID,
+				Username: cachedUser.Username,
+				Avatar:   avatar,
+				Online:   ws.ConnManager.IsOnline(cachedUser.ID),
+			})
+		} else {
+			cacheMissIDs = append(cacheMissIDs, id)
+		}
 	}
 
-	result := make([]FriendInfo, 0, len(friends))
-	for _, f := range friends {
-		// 获取头像URL
-		avatar := f.Avatar
-		if avatar == "" {
-			avatar = fmt.Sprintf("/static/avatar/%d.jpg", f.ID)
+	// 2. 缓存未命中时，从数据库查询
+	if len(cacheMissIDs) > 0 {
+		var friends []models.User
+		err := global.DB.WithContext(ctx).Where("id IN ?", cacheMissIDs).Find(&friends).Error
+		if err != nil {
+			return nil, fmt.Errorf("query friends: %w", err)
 		}
-		result = append(result, FriendInfo{
-			ID:       f.ID,
-			Username: f.Username,
-			Avatar:   avatar,
-			Online:   onlineMap[f.ID],
-		})
+
+		// 异步回写缓存（不阻塞主流程）
+		go func(missedUsers []models.User) {
+			bgCtx := context.Background()
+			for _, u := range missedUsers {
+				userInfo := &response.SelfUserResponse{
+					ID:       u.ID,
+					Username: u.Username,
+					Avatar:   u.Avatar,
+				}
+				_ = cache.SetUserInfoCache(bgCtx, u.ID, userInfo)
+			}
+		}(friends)
+
+		// 3. 处理数据库查询结果
+		for _, f := range friends {
+			avatar := f.Avatar
+			if avatar == "" {
+				avatar = fmt.Sprintf("/static/avatar/%d.jpg", f.ID)
+			}
+			result = append(result, FriendInfo{
+				ID:       f.ID,
+				Username: f.Username,
+				Avatar:   avatar,
+				Online:   ws.ConnManager.IsOnline(f.ID),
+			})
+		}
 	}
-	return result, nil
+
+	// 4. 按原始顺序返回（保持与friendIDs顺序一致）
+	orderMap := make(map[uint]FriendInfo, len(result))
+	for _, info := range result {
+		orderMap[info.ID] = info
+	}
+	orderedResult := make([]FriendInfo, 0, len(friendIDs))
+	for _, id := range friendIDs {
+		if info, ok := orderMap[id]; ok {
+			orderedResult = append(orderedResult, info)
+		}
+	}
+
+	return orderedResult, nil
 }
 
 // FriendRequest 发送好友请求
