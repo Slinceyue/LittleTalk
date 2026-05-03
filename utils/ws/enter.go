@@ -22,7 +22,7 @@ func GetHeartbeatTimeout() time.Duration {
 	if global.Config != nil && global.Config.WebSocket.HeartbeatTimeout > 0 {
 		return time.Duration(global.Config.WebSocket.HeartbeatTimeout) * time.Second
 	}
-	return 45 * time.Second // 默认值：45秒
+	return 60 * time.Second // 默认值：60秒（增加容错性）
 }
 
 func getReadBufferSize() int {

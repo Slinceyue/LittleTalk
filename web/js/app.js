@@ -24,7 +24,7 @@ let wsConnecting = false;  // 防止重复连接
 
 // 心跳配置
 const HEARTBEAT_INTERVAL = 15000; // 15秒发送一次心跳（减小心跳窗口）
-const HEARTBEAT_TIMEOUT = 45000;  // 45秒未收到响应认为断开（3倍安全边际）
+const HEARTBEAT_TIMEOUT = 60000;  // 60秒未收到响应认为断开（4倍安全边际）
 let heartbeatTimer = null;
 let lastPongTime = 0;
 
