@@ -20,6 +20,7 @@ const confirmedMessages = new Set();  // msgId -> true
 let wsReconnectTimer = null;
 let wsReconnectAttempts = 0;
 const MAX_WS_RECONNECT = 5;
+let wsConnecting = false;  // 防止重复连接
 
 // 心跳配置
 const HEARTBEAT_INTERVAL = 15000; // 15秒发送一次心跳（减小心跳窗口）
@@ -2009,15 +2010,23 @@ function connectWebSocket() {
     const wsUrl = getWsUrl() + '?token=' + token;
 
     try {
+        // 防止重复连接
+        if (wsConnecting) {
+            console.log('WebSocket正在连接中，跳过');
+            return;
+        }
+        wsConnecting = true;
         ws = new WebSocket(wsUrl);
     } catch (e) {
         console.error('创建WebSocket失败:', e);
+        wsConnecting = false;
         return;
     }
 
     ws.onopen = function () {
         console.log('WebSocket连接成功');
         wsReconnectAttempts = 0;
+        wsConnecting = false;
         lastPongTime = Date.now();
         startHeartbeat();
 
@@ -2034,10 +2043,16 @@ function connectWebSocket() {
         console.log('WebSocket连接关闭');
         stopHeartbeat();
         ws = null;
+        wsConnecting = false;
 
         if (wsReconnectAttempts < MAX_WS_RECONNECT && getToken()) {
             wsReconnectAttempts++;
-            wsReconnectTimer = setTimeout(connectWebSocket, wsReconnectAttempts * 1000);
+            // 添加延迟，避免频繁重连导致服务端的 Add 方法重复关闭连接
+            const delay = Math.min(wsReconnectAttempts * 2000, 10000);
+            console.log(`${delay/1000}秒后尝试重连...`);
+            wsReconnectTimer = setTimeout(connectWebSocket, delay);
+        } else if (wsReconnectAttempts >= MAX_WS_RECONNECT) {
+            console.warn('WebSocket重连次数已达上限，请刷新页面或重新登录');
         }
     };
 

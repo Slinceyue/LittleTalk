@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"LittleTalk/cache"
 	"LittleTalk/global"
 	"LittleTalk/models"
 )
@@ -81,6 +82,9 @@ func UploadAvatar(ctx context.Context, file *multipart.FileHeader, id uint) erro
 	if err != nil {
 		return fmt.Errorf("更新头像路径失败: %w", err)
 	}
+
+	// 11. 清除用户信息缓存，确保下次获取到最新头像
+	_ = cache.DelUserInfoCache(ctx, id)
 
 	return nil
 }
