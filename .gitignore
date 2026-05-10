@@ -1,5 +1,6 @@
 .idea
 local_settings.yaml
+settings.yaml
 tmp
 main
 static/avatar/*
@@ -8,3 +9,8 @@ logs/*
 static/files/file/*
 static/files/image/*
 main.exe
+LittleTalk.exe
+study/
+web_old/
+web/node_modules/
+.claude/

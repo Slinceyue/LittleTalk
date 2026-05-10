@@ -3,6 +3,7 @@ package request
 import "context"
 
 type TalkMessageRequest struct {
+	Type        string `json:"type"`
 	FromID      uint   `json:"from_id"`
 	ToID        uint   `json:"to_id"`
 	RoomID      uint   `json:"room_id"`
@@ -14,9 +15,9 @@ type TalkMessageRequest struct {
 	FileName    string `json:"file_name,omitempty"`
 }
 type FriendMessageRequest struct {
-	FromID       uint   `json:"from_id"`
-	ToID         uint   `json:"to_id"`
-	FromUsername string `json:"from_username"`
+	FromID       uint
+	ToID         uint
+	FromUsername string
 }
 type MessageContext struct {
 	MsgType string

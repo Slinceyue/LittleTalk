@@ -19,12 +19,22 @@ func (MiddleHandler) ParseTokenHandler(c *gin.Context) {
 	}
 
 	var tokenStr string
-	var err error
 
-	// 优先从Cookie获取token
-	tokenStr, err = c.Cookie("token")
-	if err != nil {
-		// 如果没有Cookie，尝试从URL参数获取token（WebSocket连接）
+	// 优先从Authorization header获取token
+	authHeader := c.GetHeader("Authorization")
+	if authHeader != "" {
+		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			tokenStr = authHeader[7:]
+		}
+	}
+
+	// 其次从Cookie获取
+	if tokenStr == "" {
+		tokenStr, _ = c.Cookie("token")
+	}
+
+	// 最后从URL参数获取（WebSocket连接用）
+	if tokenStr == "" {
 		tokenStr = c.Query("token")
 	}
 

@@ -25,14 +25,18 @@ func (FriendHandler) GetFriendListHandler(c *gin.Context) {
 // FriendRequestHandler 发送好友请求
 func (FriendHandler) FriendRequestHandler(c *gin.Context) {
 	userID, _ := c.Get("id")
-	var _request request.FriendRequest
-	if err := c.ShouldBindJSON(&_request); err != nil {
+	var req request.FriendRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		response.FailWithMsg(c, enum.CodeInvalidParam, "参数错误")
 		return
 	}
-	err := service.FriendRequest(c.Request.Context(), _request, userID.(uint))
+	err := service.FriendRequest(c.Request.Context(), req, userID.(uint))
 	if err != nil {
-		response.FailWithCode(c, err.(enum.ResCode))
+		if code, ok := err.(enum.ResCode); ok {
+			response.FailWithCode(c, code)
+		} else {
+			response.FailWithMsg(c, enum.CodeServerError, err.Error())
+		}
 		return
 	}
 	response.OK(c)
@@ -52,14 +56,18 @@ func (FriendHandler) GetFriendRequestHandler(c *gin.Context) {
 // OKFriendRequestHandler 同意好友请求
 func (FriendHandler) OKFriendRequestHandler(c *gin.Context) {
 	userID, _ := c.Get("id")
-	var _request request.FriendRequestOK
-	if err := c.ShouldBindJSON(&_request); err != nil {
+	var req request.FriendRequestOK
+	if err := c.ShouldBindJSON(&req); err != nil {
 		response.FailWithMsg(c, enum.CodeInvalidParam, "参数错误")
 		return
 	}
-	err := service.OKFriendRequest(c.Request.Context(), _request, userID.(uint))
+	err := service.OKFriendRequest(c.Request.Context(), req, userID.(uint))
 	if err != nil {
-		response.FailWithCode(c, err.(enum.ResCode))
+		if code, ok := err.(enum.ResCode); ok {
+			response.FailWithCode(c, code)
+		} else {
+			response.FailWithMsg(c, enum.CodeServerError, err.Error())
+		}
 		return
 	}
 	response.OK(c)
@@ -68,14 +76,18 @@ func (FriendHandler) OKFriendRequestHandler(c *gin.Context) {
 // RejectFriendRequestHandler 拒绝好友请求
 func (FriendHandler) RejectFriendRequestHandler(c *gin.Context) {
 	userID, _ := c.Get("id")
-	var _request request.RejectFriendRequest
-	if err := c.ShouldBindJSON(&_request); err != nil {
+	var req request.RejectFriendRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		response.FailWithMsg(c, enum.CodeInvalidParam, "参数错误")
 		return
 	}
-	err := service.RejectFriendRequest(c.Request.Context(), _request.FromID, userID.(uint))
+	err := service.RejectFriendRequest(c.Request.Context(), req.FromID, userID.(uint))
 	if err != nil {
-		response.FailWithCode(c, err.(enum.ResCode))
+		if code, ok := err.(enum.ResCode); ok {
+			response.FailWithCode(c, code)
+		} else {
+			response.FailWithMsg(c, enum.CodeServerError, err.Error())
+		}
 		return
 	}
 	response.OK(c)
@@ -84,14 +96,18 @@ func (FriendHandler) RejectFriendRequestHandler(c *gin.Context) {
 // DeleteFriendHandler 删除好友
 func (FriendHandler) DeleteFriendHandler(c *gin.Context) {
 	userID, _ := c.Get("id")
-	var _request request.DeleteFriendRequest
-	if err := c.ShouldBindJSON(&_request); err != nil {
+	var req request.DeleteFriendRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		response.FailWithMsg(c, enum.CodeInvalidParam, "参数错误")
 		return
 	}
-	err := service.DeleteFriend(c.Request.Context(), _request.FriendID, userID.(uint))
+	err := service.DeleteFriend(c.Request.Context(), req.FriendID, userID.(uint))
 	if err != nil {
-		response.FailWithCode(c, err.(enum.ResCode))
+		if code, ok := err.(enum.ResCode); ok {
+			response.FailWithCode(c, code)
+		} else {
+			response.FailWithMsg(c, enum.CodeServerError, err.Error())
+		}
 		return
 	}
 	response.OK(c)

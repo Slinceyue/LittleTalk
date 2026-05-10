@@ -11,6 +11,7 @@ import "fmt"
  * - 4xxxx  = 消息模块
  * - 5xxxx  = 文件模块
  * - 6xxxx  = WebSocket模块
+ * - 7xxxx  = 群聊模块
  */
 
 // ResCode 响应码类型
@@ -79,6 +80,14 @@ const (
 	CodeWsInvalidMessage   ResCode = 6003 // 无效的WebSocket消息格式
 	CodeWsHeartbeatTimeout ResCode = 6004 // 连接已断开（心跳超时）
 	CodeWsAlreadyConnected ResCode = 6005 // WebSocket已连接
+
+	// ====== 群聊模块 (7001-7999) ======
+	CodeRoomNotFound        ResCode = 7001 // 群聊不存在
+	CodeRoomNameEmpty       ResCode = 7002 // 群名称不能为空
+	CodeRoomOwnerCannotQuit ResCode = 7003 // 群主不能退出群聊，请先转让群主
+	CodeRoomMemberNotFound  ResCode = 7004 // 群成员不存在
+	CodeRoomAlreadyJoined   ResCode = 7005 // 已在群中
+	CodeNoPermission        ResCode = 7999 // 无权限操作
 )
 
 // codeMsgMap 响应码到消息的映射
@@ -132,6 +141,13 @@ var codeMsgMap = map[ResCode]string{
 	CodeWsInvalidMessage:   "消息格式错误",
 	CodeWsHeartbeatTimeout: "连接已断开，请刷新页面重试",
 	CodeWsAlreadyConnected: "WebSocket已连接",
+
+	CodeRoomNotFound:        "群聊不存在",
+	CodeRoomNameEmpty:       "群名称不能为空",
+	CodeRoomOwnerCannotQuit: "群主不能退出群聊，请先转让群主",
+	CodeRoomMemberNotFound:  "群成员不存在",
+	CodeRoomAlreadyJoined:   "已在群中",
+	CodeNoPermission:        "无权限操作",
 }
 
 // String 获取状态码对应的中文提示信息

@@ -19,16 +19,17 @@ func Run() {
 	UserRouter(nr)
 	MessageRouter(nr)
 	FriendRouter(nr)
+	RoomRouter(nr)
 	UserLogin_Creat(r)
 
-	// 静态文件服务（前端页面、头像等）
-	r.Static("/web", "./web")
+	// 静态文件服务（头像等）
 	r.Static("/static", "./static")
 
-	// 前端页面入口（根路径）
-	r.LoadHTMLFiles("./web/index.html")
+	// 前端页面（Vue构建产物）
+	r.Static("/assets", "./web/dist/assets")
+	r.LoadHTMLFiles("./web/dist/index.html")
 	r.GET("/", func(c *gin.Context) {
-		c.HTML(200, "", nil)
+		c.HTML(200, "index.html", nil)
 	})
 
 	addr := global.Config.System.Addr()

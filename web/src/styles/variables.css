@@ -1,0 +1,101 @@
+/* ===== Light Theme (Default) ===== */
+:root,
+[data-theme="light"] {
+  --primary: #07C160;
+  --primary-hover: #06ad56;
+  --primary-light: #e8f8ef;
+  --danger: #fa5151;
+  --danger-hover: #e04848;
+  --warning: #ffc107;
+  --info: #1989fa;
+
+  --bg-page: #f0f0f2;
+  --bg-white: #ffffff;
+  --bg-card: #ffffff;
+  --bg-input: #f5f5f5;
+  --bg-hover: #f0f0f0;
+  --bg-active: #e5e5e5;
+  --bg-modal: rgba(0, 0, 0, 0.5);
+  --bg-mask: rgba(0, 0, 0, 0.3);
+  --bg-skeleton: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-hint: #999999;
+  --text-disabled: #cccccc;
+  --text-inverse: #ffffff;
+  --text-link: #576b95;
+
+  --border: #e5e5e5;
+  --border-light: #f0f0f0;
+  --divider: #f5f5f5;
+
+  --bubble-self: #95ec69;
+  --bubble-self-text: #1a1a1a;
+  --bubble-other: #ffffff;
+  --bubble-other-text: #1a1a1a;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 50%;
+
+  --font-xs: 12px;
+  --font-sm: 13px;
+  --font-md: 15px;
+  --font-lg: 17px;
+  --font-xl: 20px;
+
+  --header-height: 48px;
+  --tabbar-height: 56px;
+  --input-height: 52px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  --duration-fast: 0.15s;
+  --duration-normal: 0.25s;
+  --duration-slow: 0.35s;
+  --ease-out: cubic-bezier(0.25, 0.8, 0.25, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== Dark Theme ===== */
+[data-theme="dark"] {
+  --primary: #07C160;
+  --primary-hover: #06ad56;
+  --primary-light: #1a3a28;
+  --danger: #fa5151;
+
+  --bg-page: #111111;
+  --bg-white: #1e1e1e;
+  --bg-card: #1e1e1e;
+  --bg-input: #2c2c2c;
+  --bg-hover: #2c2c2c;
+  --bg-active: #3a3a3a;
+  --bg-modal: rgba(0, 0, 0, 0.7);
+  --bg-mask: rgba(0, 0, 0, 0.5);
+  --bg-skeleton: linear-gradient(90deg, #2c2c2c 25%, #3a3a3a 50%, #2c2c2c 75%);
+
+  --text-primary: #e5e5e5;
+  --text-secondary: #999999;
+  --text-hint: #666666;
+  --text-inverse: #1a1a1a;
+  --text-link: #7d90b2;
+
+  --border: #333333;
+  --border-light: #2c2c2c;
+  --divider: #2c2c2c;
+
+  --bubble-self: #2b5a2b;
+  --bubble-self-text: #e5e5e5;
+  --bubble-other: #2c2c2c;
+  --bubble-other-text: #e5e5e5;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+}

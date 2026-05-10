@@ -126,10 +126,20 @@ func processWSMessage(userID uint, client *ws.Client, data []byte) {
 	// ----- 心跳：客户端发ping，服务端回pong -----
 	if msgType == "ping" {
 		client.Wmu.Lock()
+		// 设置2秒写入超时
+		client.Conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
 		err := client.Conn.WriteJSON(map[string]any{"type": "pong"})
 		client.Wmu.Unlock()
 		if err != nil {
 			log.Printf("[WS] [UID=%d] 回复心跳失败: %v\n", userID, err)
+			// 连续心跳失败超过3次，断开连接
+			client.HeartbeatTimeoutCount++
+			if client.HeartbeatTimeoutCount >= 3 {
+				log.Printf("[WS] [UID=%d] 心跳超时次数过多，断开连接\n", userID)
+				return // 断开连接
+			}
+		} else {
+			client.HeartbeatTimeoutCount = 0
 		}
 		return
 	}
@@ -137,6 +147,36 @@ func processWSMessage(userID uint, client *ws.Client, data []byte) {
 	// ----- 获取好友在线状态 -----
 	if msgType == "get_online_status" {
 		handleGetOnlineStatus(userID, client)
+		return
+	}
+
+	// ----- 打字状态中继 -----
+	if msgType == "typing" {
+		var typingMsg struct {
+			ToID   uint `json:"to_id"`
+			Typing bool `json:"typing"`
+		}
+		if err := json.Unmarshal(data, &typingMsg); err != nil {
+			return
+		}
+		if typingMsg.ToID > 0 {
+			relayTypingIndicator(userID, typingMsg.ToID, typingMsg.Typing)
+		}
+		return
+	}
+
+	// ----- 已读回执中继 -----
+	if msgType == "read_receipt" {
+		var receiptMsg struct {
+			MsgIDs []string `json:"msg_ids"`
+			ToID   uint     `json:"to_id"`
+		}
+		if err := json.Unmarshal(data, &receiptMsg); err != nil {
+			return
+		}
+		if receiptMsg.ToID > 0 && len(receiptMsg.MsgIDs) > 0 {
+			relayReadReceipt(userID, receiptMsg.ToID, receiptMsg.MsgIDs)
+		}
 		return
 	}
 
@@ -148,11 +188,25 @@ func processWSMessage(userID uint, client *ws.Client, data []byte) {
 	}
 	message.FromID = userID
 
-	// 发送到消息队列异步处理
-	service.MessageChannel <- &request.MessageContext{
-		MsgType:            "talk",
-		TalkMessageRequest: message,
+	// 如果有 room_id 且为群聊类型，发送到群聊消息队列
+	if message.RoomID > 0 {
+		service.MessageChannel <- &request.MessageContext{
+			MsgType:           "group_talk",
+			TalkMessageRequest: message,
+		}
+		return
 	}
+
+	// 如果有 to_id 且大于 0，发送到私聊消息队列
+	if message.ToID > 0 {
+		service.MessageChannel <- &request.MessageContext{
+			MsgType:           "talk",
+			TalkMessageRequest: message,
+		}
+		return
+	}
+
+	log.Printf("[WS] [UID=%d] 消息缺少目标ID (to_id 或 room_id)\n", userID)
 }
 
 // handleGetOnlineStatus 处理获取好友在线状态请求
@@ -206,9 +260,15 @@ func sendOfflineMessages(userID uint, client *ws.Client) {
 			continue
 		}
 
+		// 根据消息内容判断类型：room_id > 0 表示群聊消息
+		msgType := "talk"
+		if roomID, ok := msg["room_id"].(float64); ok && roomID > 0 {
+			msgType = "group_talk"
+		}
+
 		client.Wmu.Lock()
 		err = client.Conn.WriteJSON(map[string]any{
-			"msg_type": "talk",
+			"msg_type": msgType,
 			"data":     msg,
 		})
 		client.Wmu.Unlock()
@@ -298,7 +358,45 @@ func (MessageHandler) GetMessageList(c *gin.Context) {
 	response.OKWithData(c, result)
 }
 
-// GetChatHistory 获取与指定好友的聊天记录
+// GetDBChatHistory 从数据库获取聊天记录
+func (MessageHandler) GetDBChatHistory(c *gin.Context) {
+	userID, _ := c.Get("id")
+	friendIDStr := c.Query("friend_id")
+	if friendIDStr == "" {
+		response.FailWithMsg(c, enum.CodeInvalidParam, "缺少friend_id参数")
+		return
+	}
+
+	fid, err := strconv.ParseUint(friendIDStr, 10, 64)
+	if err != nil {
+		response.FailWithMsg(c, enum.CodeInvalidParam, "无效的friend_id")
+		return
+	}
+
+	pageStr := c.DefaultQuery("page", "1")
+	pageSizeStr := c.DefaultQuery("page_size", "50")
+
+	page, _ := strconv.Atoi(pageStr)
+	pageSize, _ := strconv.Atoi(pageSizeStr)
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 50
+	}
+
+	ctx := c.Request.Context()
+	messages, err := service.GetDBChatHistory(ctx, userID.(uint), uint(fid), page, pageSize)
+	if err != nil {
+		log.Printf("[DB聊天记录] [UID=%d] 获取与[UID=%d]的记录失败: %v\n", userID, fid, err)
+		response.FailWithMsg(c, enum.CodeServerError, "获取聊天记录失败")
+		return
+	}
+
+	response.OKWithData(c, messages)
+}
+
+// GetChatHistory 获取与指定好友的聊天记录（Redis缓存）
 func (MessageHandler) GetChatHistory(c *gin.Context) {
 	userID, _ := c.Get("id")
 	friendIDStr := c.Query("friend_id")
@@ -337,4 +435,103 @@ func (MessageHandler) GetUnreadCount(c *gin.Context) {
 	}
 
 	response.OKWithData(c, gin.H{"total": count})
+}
+
+// SearchMessages 搜索消息
+func (MessageHandler) SearchMessages(c *gin.Context) {
+	userID, _ := c.Get("id")
+	query := c.Query("query")
+	if query == "" {
+		response.FailWithMsg(c, enum.CodeInvalidParam, "缺少搜索关键词")
+		return
+	}
+
+	friendIDStr := c.Query("friend_id")
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
+
+	fid := uint(0)
+	if friendIDStr != "" {
+		parsed, err := strconv.ParseUint(friendIDStr, 10, 64)
+		if err == nil {
+			fid = uint(parsed)
+		}
+	}
+
+	page := 1
+	if pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	pageSize := 20
+	if pageSizeStr != "" {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 && ps <= 50 {
+			pageSize = ps
+		}
+	}
+
+	ctx := c.Request.Context()
+	list, total, err := service.SearchMessages(ctx, userID.(uint), fid, query, page, pageSize)
+	if err != nil {
+		log.Printf("[消息搜索] [UID=%d] 搜索失败: %v\n", userID, err)
+		response.FailWithMsg(c, enum.CodeServerError, "搜索失败")
+		return
+	}
+
+	response.OKWithData(c, gin.H{
+		"list":      list,
+		"total":     total,
+		"page":      page,
+		"page_size": pageSize,
+	})
+}
+
+// relayTypingIndicator 转发打字状态给目标用户
+func relayTypingIndicator(fromID, toID uint, typing bool) {
+	target, ok := ws.ConnManager.Get(toID)
+	if !ok || target == nil {
+		return
+	}
+
+	target.Wmu.Lock()
+	defer target.Wmu.Unlock()
+
+	if target.Conn == nil {
+		return
+	}
+
+	target.Conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+	if err := target.Conn.WriteJSON(map[string]any{
+		"type":    "typing",
+		"from_id": fromID,
+		"typing":  typing,
+	}); err != nil {
+		log.Printf("[Typing] 转发打字状态失败 from=%d to=%d: %v\n", fromID, toID, err)
+	}
+}
+
+// relayReadReceipt 转发已读回执给消息发送者
+func relayReadReceipt(fromID, toID uint, msgIDs []string) {
+	target, ok := ws.ConnManager.Get(toID)
+	if !ok || target == nil {
+		return
+	}
+
+	target.Wmu.Lock()
+	defer target.Wmu.Unlock()
+
+	if target.Conn == nil {
+		return
+	}
+
+	target.Conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+	if err := target.Conn.WriteJSON(map[string]any{
+		"type":    "read_receipt",
+		"from_id": fromID,
+		"msg_ids": msgIDs,
+	}); err != nil {
+		log.Printf("[ReadReceipt] 转发已读回执失败 from=%d to=%d: %v\n", fromID, toID, err)
+	}
 }

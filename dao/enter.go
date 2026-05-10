@@ -6,12 +6,14 @@ import (
 	"context"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // 预定义错误
 var (
 	// ErrRecordNotFound 记录不存在
-	ErrRecordNotFound = errors.New("record not found")
+	ErrRecordNotFound = gorm.ErrRecordNotFound
 	// ErrDuplicateEntry 重复条目（如用户名已存在）
 	ErrDuplicateEntry = errors.New("duplicate entry")
 )
@@ -46,12 +48,12 @@ func Get[T any](ctx context.Context, where T) (T, error) {
 	return model, nil
 }
 
-// GetByKey 根据键值模糊查询
+// GetByKey 根据键值精确查询
 func GetByKey[T any](ctx context.Context, where T, keyType string, key string) (T, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(global.Config.System.ServerTimeout)*time.Second)
 	defer cancel()
 	var model T
-	err := global.DB.Where(where).Where(keyType+" LIKE ?", "%"+key+"%").First(&model).Error
+	err := global.DB.Where(where).Where(keyType+" = ?", key).First(&model).Error
 	if err != nil {
 		if errors.Is(err, ErrRecordNotFound) {
 			return model, ErrRecordNotFound

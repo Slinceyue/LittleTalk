@@ -4,6 +4,7 @@ import (
 	"LittleTalk/global"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -205,6 +206,53 @@ func IsMessageProcessed(msgID string) (bool, error) {
 		return false, err
 	}
 	return exists, nil
+}
+
+// SearchUserMessages 搜索用户的所有私聊消息
+func SearchUserMessages(ctx context.Context, userID uint, query string, maxResults int) ([]map[string]any, error) {
+	pattern := fmt.Sprintf("msg:chat:%d:*", userID)
+	keys, _, err := global.RDB.Scan(ctx, 0, pattern, 100).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	if maxResults <= 0 {
+		maxResults = 200
+	}
+
+	var results []map[string]any
+	queryLower := strings.ToLower(query)
+
+	for _, key := range keys {
+		if len(results) >= maxResults {
+			break
+		}
+		list, err := global.RDB.LRange(ctx, key, 0, -1).Result()
+		if err != nil {
+			continue
+		}
+		for _, s := range list {
+			if len(results) >= maxResults {
+				break
+			}
+			var msg ChatMessage
+			if err := json.Unmarshal([]byte(s), &msg); err != nil {
+				continue
+			}
+			if strings.Contains(strings.ToLower(msg.Content), queryLower) {
+				results = append(results, map[string]any{
+					"msg_id":       0,
+					"from_id":      msg.FromID,
+					"to_id":        msg.ToID,
+					"content":      msg.Content,
+					"send_time":    msg.SendTime,
+					"message_type": msg.MessageType,
+				})
+			}
+		}
+	}
+
+	return results, nil
 }
 
 // MarkMessageProcessed 标记消息已处理

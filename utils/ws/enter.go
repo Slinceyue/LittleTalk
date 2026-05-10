@@ -52,9 +52,10 @@ type ConnectionManager struct {
 
 // Client WebSocket客户端连接
 type Client struct {
-	UserID uint              // 用户ID
-	Conn   *websocket.Conn   // WebSocket连接
-	Wmu    sync.Mutex        // 连接级写锁（保护并发写入）
+	UserID                uint   // 用户ID
+	Conn                  *websocket.Conn   // WebSocket连接
+	Wmu                   sync.Mutex        // 连接级写锁（保护并发写入）
+	HeartbeatTimeoutCount int    // 心跳超时计数
 }
 
 // ============================================================================

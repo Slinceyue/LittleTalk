@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -44,14 +45,8 @@ func getFriendLock(userID uint) *sync.Mutex {
 
 // GetFriendList 获取好友列表
 func GetFriendList(ctx context.Context, userID uint) ([]FriendInfo, error) {
-	friendIDs, err := cache.GetFriendList(ctx, userID)
-	if err == nil && len(friendIDs) > 0 {
-		friendInfos, err := getFriendDetailsByIDs(ctx, friendIDs)
-		if err == nil {
-			return friendInfos, nil
-		}
-	}
-
+	// 无论缓存是否存在，都需要查数据库确保数据最新
+	// 缓存只用于加速，数据库才是数据源
 	friendModels, _, err := dao.GetFriendListByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("dao get friend list: %w", err)
@@ -60,19 +55,29 @@ func GetFriendList(ctx context.Context, userID uint) ([]FriendInfo, error) {
 		return []FriendInfo{}, nil
 	}
 
-	friendIDs = []uint{}
+	// 去重：好友关系是双向存储的，需要去重
+	seen := make(map[uint]bool)
+	friendIDs := make([]uint, 0, len(friendModels))
+	logrus.Infof("[GetFriendList] UID=%d, 原始记录数=%d", userID, len(friendModels))
 	for _, m := range friendModels {
 		friendID := m.FriendID
 		if m.FriendID == userID {
 			friendID = m.UserID
 		}
-		friendIDs = append(friendIDs, friendID)
+		if !seen[friendID] {
+			seen[friendID] = true
+			friendIDs = append(friendIDs, friendID)
+		}
+		logrus.Infof("[GetFriendList] 记录: UserID=%d, FriendID=%d, 实际FriendID=%d", m.UserID, m.FriendID, friendID)
 	}
+	logrus.Infof("[GetFriendList] UID=%d, 去重后好友数=%d, IDs=%v", userID, len(friendIDs), friendIDs)
 
-	// 异步回写缓存
+	// 异步回写缓存（不阻塞返回）
 	go func() {
 		if len(friendIDs) > 0 {
 			_ = cache.SetFriendList(context.Background(), userID, friendIDs)
+		} else {
+			_ = cache.DelFriendList(context.Background(), userID)
 		}
 	}()
 
@@ -80,11 +85,13 @@ func GetFriendList(ctx context.Context, userID uint) ([]FriendInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get friend details: %w", err)
 	}
+	logrus.Infof("[GetFriendList] UID=%d, 返回好友数=%d", userID, len(friendInfos))
 	return friendInfos, nil
 }
 
 // getFriendDetailsByIDs 根据ID列表批量获取好友详细信息（使用缓存优化）
 func getFriendDetailsByIDs(ctx context.Context, friendIDs []uint) ([]FriendInfo, error) {
+	logrus.Infof("[getFriendDetailsByIDs] 开始获取 %d 个好友详情, IDs=%v", len(friendIDs), friendIDs)
 	if len(friendIDs) == 0 {
 		return []FriendInfo{}, nil
 	}
@@ -96,6 +103,7 @@ func getFriendDetailsByIDs(ctx context.Context, friendIDs []uint) ([]FriendInfo,
 	for _, id := range friendIDs {
 		cachedUser, err := cache.GetUserInfoCache(ctx, id)
 		if err == nil && cachedUser != nil {
+			logrus.Infof("[getFriendDetailsByIDs] 缓存命中 UID=%d, Username=%s", id, cachedUser.Username)
 			avatar := cachedUser.Avatar
 			if avatar == "" {
 				avatar = fmt.Sprintf("/static/avatar/%d.jpg", cachedUser.ID)
@@ -107,9 +115,11 @@ func getFriendDetailsByIDs(ctx context.Context, friendIDs []uint) ([]FriendInfo,
 				Online:   ws.ConnManager.IsOnline(cachedUser.ID),
 			})
 		} else {
+			logrus.Infof("[getFriendDetailsByIDs] 缓存未命中 UID=%d, err=%v", id, err)
 			cacheMissIDs = append(cacheMissIDs, id)
 		}
 	}
+	logrus.Infof("[getFriendDetailsByIDs] 缓存命中 %d 个, 缓存miss %d 个", len(friendIDs)-len(cacheMissIDs), len(cacheMissIDs))
 
 	// 2. 缓存未命中时，从数据库查询
 	if len(cacheMissIDs) > 0 {
@@ -118,6 +128,7 @@ func getFriendDetailsByIDs(ctx context.Context, friendIDs []uint) ([]FriendInfo,
 		if err != nil {
 			return nil, fmt.Errorf("query friends: %w", err)
 		}
+		logrus.Infof("[getFriendDetailsByIDs] 数据库查询结果: 查询IDs=%v, 返回 %d 条记录", cacheMissIDs, len(friends))
 
 		// 异步回写缓存（不阻塞主流程）
 		go func(missedUsers []models.User) {

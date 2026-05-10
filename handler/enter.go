@@ -4,6 +4,7 @@ import (
 	"LittleTalk/handler/friend_handler"
 	"LittleTalk/handler/message_handler"
 	"LittleTalk/handler/middle_handler"
+	"LittleTalk/handler/room_handler"
 	"LittleTalk/handler/tools_handler"
 	"LittleTalk/handler/user_handler"
 )
@@ -15,6 +16,7 @@ type AllApi struct {
 	user_handler.UserHandler
 	middle_handler.MiddleHandler
 	tools_handler.ToolsHandler
+	room_handler.RoomHandler
 }
 
 var Api AllApi
