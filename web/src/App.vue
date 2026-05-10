@@ -142,10 +142,11 @@ function handleIncomingMessage(type, msgData) {
     ? contacts.getUserAvatar(id)
     : (contacts.getGroupById(id)?.avatar || '')
   chat.updateRecentChat({
+    type: type,
     friend_id: id,
     friend_name: name,
     friend_avatar: avatar,
-    last_message: msgData.content || '',
+    last_message: msgData.content || msgData.file_name || (msgData.file_url ? '[文件]' : ''),
     send_time: msgData.send_time || Date.now(),
   })
 

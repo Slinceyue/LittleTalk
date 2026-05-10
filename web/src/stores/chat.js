@@ -124,7 +124,10 @@ export const useChatStore = defineStore('chat', {
       try {
         const { data } = await messagesApi.getRecentChats()
         if (data.code === 0 && data.data) {
-          const chats = data.data.map(c => ({
+          // Keep existing group chats (server doesn't return groups)
+          const existingGroups = this.recentChats.filter(c => c.type === 'group')
+          const serverChats = data.data.map(c => ({
+            type: c.type || 'friend',
             friend_id: c.friend_id,
             friend_name: c.friend_name,
             friend_avatar: c.friend_avatar,
@@ -132,10 +135,16 @@ export const useChatStore = defineStore('chat', {
             send_time: c.send_time,
             online: c.online,
           }))
-          if (chats.length > 0) {
-            this.recentChats = chats
-            setItem(this._scoped(STORAGE_KEYS.RECENT_CHATS), this.recentChats)
+          const merged = [...serverChats]
+          for (const g of existingGroups) {
+            if (!merged.some(m => m.friend_id === g.friend_id && m.type === 'group')) {
+              merged.push(g)
+            }
           }
+          // Sort by send_time descending
+          merged.sort((a, b) => (b.send_time || 0) - (a.send_time || 0))
+          this.recentChats = merged
+          setItem(this._scoped(STORAGE_KEYS.RECENT_CHATS), this.recentChats)
         }
       } catch { /* fall back to localStorage cache */ }
     },

@@ -172,6 +172,15 @@ function handleSend(data) {
       content: data.content,
       message_type: data.messageType || 1,
     })
+
+    chat.updateRecentChat({
+      type: 'group',
+      friend_id: conversation.value.id,
+      friend_name: conversation.value.name,
+      friend_avatar: '',
+      last_message: data.content || data.fileName || (data.fileUrl ? '[文件]' : ''),
+      send_time: sendTime,
+    })
   } else {
     const localMsg = {
       msg_id: msgId,
@@ -200,10 +209,11 @@ function handleSend(data) {
 
     // Update recent chat
     chat.updateRecentChat({
+      type: 'friend',
       friend_id: conversation.value.id,
       friend_name: conversation.value.name,
       friend_avatar: contacts.getUserAvatar(conversation.value.id),
-      last_message: data.content,
+      last_message: data.content || data.fileName || (data.fileUrl ? '[文件]' : ''),
       send_time: sendTime,
     })
   }

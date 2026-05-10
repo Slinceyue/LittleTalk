@@ -4,13 +4,13 @@
     <AppEmptyState v-if="chats.length === 0" icon="💬" text="暂无消息，点击好友开始聊天" />
     <div
       v-for="chat in chats"
-      :key="chat.friend_id"
+      :key="(chat.type || 'friend') + '_' + chat.friend_id"
       class="conv-item"
       @click="openChat(chat)"
     >
       <div class="conv-avatar">
         <AppAvatar :src="chat.friend_avatar" :name="chat.friend_name" />
-        <span v-if="contacts.isOnline(chat.friend_id)" class="online-dot"></span>
+        <span v-if="chat.type !== 'group' && contacts.isOnline(chat.friend_id)" class="online-dot"></span>
       </div>
       <div class="conv-body">
         <div class="conv-top">
@@ -19,8 +19,8 @@
         </div>
         <div class="conv-preview truncate">{{ chat.last_message }}</div>
       </div>
-      <span v-if="unreadCount(chat.friend_id)" class="conv-badge">
-        {{ unreadCount(chat.friend_id) > 99 ? '99+' : unreadCount(chat.friend_id) }}
+      <span v-if="unreadCount(chat)" class="conv-badge">
+        {{ unreadCount(chat) > 99 ? '99+' : unreadCount(chat) }}
       </span>
     </div>
   </div>
@@ -41,12 +41,14 @@ const ui = useUiStore()
 
 const chats = computed(() => chat.recentChats)
 
-function unreadCount(friendId) {
-  return chat.unreadCounts[`friend_${friendId}`] || 0
+function unreadCount(chat) {
+  const type = chat.type || 'friend'
+  return chat.unreadCounts[`${type}_${chat.friend_id}`] || 0
 }
 
 function openChat(chatItem) {
-  chat.openConversation('friend', chatItem.friend_id, chatItem.friend_name)
+  const type = chatItem.type || 'friend'
+  chat.openConversation(type, chatItem.friend_id, chatItem.friend_name)
   ui.navigateTo('chat')
 }
 </script>

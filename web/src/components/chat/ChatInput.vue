@@ -113,8 +113,6 @@ async function uploadAndSend(file, msgType) {
     uploadFile = await compressImage(file, MAX_IMAGE_DIM, 2 * 1024 * 1024)
   }
 
-  if (!confirm(`确定发送 ${msgType === MSG_TYPE.IMAGE ? '图片' : '文件'} "${file.name}"?`)) return
-
   const formData = new FormData()
   formData.append('file', uploadFile)
   formData.append('type', msgType === MSG_TYPE.IMAGE ? 'image' : 'file')
@@ -125,7 +123,7 @@ async function uploadAndSend(file, msgType) {
     if (data.code === 0) {
       const fileUrl = data.data
       emit('send', {
-        content: msgType === MSG_TYPE.IMAGE ? fileUrl : `[文件] ${file.name}`,
+        content: msgType === MSG_TYPE.IMAGE ? '[图片]' : `[文件] ${file.name}`,
         messageType: msgType,
         fileUrl,
         fileName: file.name,

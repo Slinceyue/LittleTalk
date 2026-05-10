@@ -75,7 +75,12 @@ const isImage = computed(() =>
 )
 const isFile = computed(() => props.msg.message_type === 2)
 const fileName = computed(() => props.msg.file_name || '文件')
-const imageUrl = computed(() => props.msg.file_url || props.msg.content)
+const imageUrl = computed(() => {
+  const url = props.msg.file_url || props.msg.content
+  if (!url) return ''
+  if (url.startsWith('http') || url.startsWith('/')) return url
+  return buildDownloadUrl(url, 'image', props.msg.from_id)
+})
 const downloadUrl = computed(() => {
   if (isImage.value) return imageUrl.value
   return buildDownloadUrl(props.msg.file_url, props.msg.message_type === 3 ? 'image' : 'file', props.msg.from_id)
