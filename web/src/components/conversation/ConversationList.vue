@@ -41,9 +41,9 @@ const ui = useUiStore()
 
 const chats = computed(() => chat.recentChats)
 
-function unreadCount(chat) {
-  const type = chat.type || 'friend'
-  return chat.unreadCounts[`${type}_${chat.friend_id}`] || 0
+function unreadCount(item) {
+  const type = item.type || 'friend'
+  return chat.unreadCounts[`${type}_${item.friend_id}`] || 0
 }
 
 function openChat(chatItem) {

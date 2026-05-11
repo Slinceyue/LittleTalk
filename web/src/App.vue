@@ -73,6 +73,7 @@ onMounted(async () => {
     contacts.initFriendsFromCache()
     contacts.initGroupsFromCache()
     chat.loadRecentChats()
+    chat.syncRecentChats()
     contacts.fetchFriends()
     contacts.fetchGroups()
     contacts.fetchFriendRequests()

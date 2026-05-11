@@ -62,7 +62,7 @@ export const useChatStore = defineStore('chat', {
       // If local cache is empty, try to sync from DB
       if (this.messageMap[key].length === 0) {
         const parts = key.split('_')
-        if (parts[0] === 'talk') {
+        if (parts[0] === 'friend') {
           const friendId = parseInt(parts[1], 10)
           if (friendId) this.syncHistoryFromServer(friendId)
         }
@@ -98,9 +98,10 @@ export const useChatStore = defineStore('chat', {
     },
 
     updateRecentChat(chat) {
+      const type = chat.type || 'friend'
       this.recentChats = [
         chat,
-        ...this.recentChats.filter(c => c.friend_id !== chat.friend_id)
+        ...this.recentChats.filter(c => !(c.friend_id === chat.friend_id && (c.type || 'friend') === type))
       ].slice(0, 20)
       setItem(this._scoped(STORAGE_KEYS.RECENT_CHATS), this.recentChats)
     },
@@ -123,7 +124,7 @@ export const useChatStore = defineStore('chat', {
     async syncRecentChats() {
       try {
         const { data } = await messagesApi.getRecentChats()
-        if (data.code === 0 && data.data) {
+        if (data.code === 0 && data.data && data.data.length > 0) {
           // Keep existing group chats (server doesn't return groups)
           const existingGroups = this.recentChats.filter(c => c.type === 'group')
           const serverChats = data.data.map(c => ({
@@ -143,8 +144,11 @@ export const useChatStore = defineStore('chat', {
           }
           // Sort by send_time descending
           merged.sort((a, b) => (b.send_time || 0) - (a.send_time || 0))
-          this.recentChats = merged
-          setItem(this._scoped(STORAGE_KEYS.RECENT_CHATS), this.recentChats)
+          // Only replace if we have data — don't blow away local cache with empty server response
+          if (merged.length > 0) {
+            this.recentChats = merged
+            setItem(this._scoped(STORAGE_KEYS.RECENT_CHATS), this.recentChats)
+          }
         }
       } catch { /* fall back to localStorage cache */ }
     },
